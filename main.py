@@ -1,64 +1,75 @@
 import cv2
 import numpy as np
 import mediapipe as mp
+
 mp_face_mesh = mp.solutions.face_mesh
-face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True)
+face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1)
 
 FEATURE_INDICES = {
-    "eyes": [33, 133, 362, 263, 107, 336],
-    "nose": [168, 19, 1, 4, 98, 327],
-    "mouth": [61, 291, 0, 17]}
+    "nose": [168, 275, 330, 327, 326, 2, 97, 98, 101, 45],
+    "mouth": [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78]}
 
-def get_auto_crop(image, feature_name, padding=20):
+def get_landmarks(image, feature_name):
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = face_mesh.process(rgb_image)
-
+    
     if not results.multi_face_landmarks:
-        return None
-
+        raise ValueError(f"Face not detected for {feature_name}.")
+        
+    h, w = image.shape[:2]
     landmarks = results.multi_face_landmarks[0].landmark
-    h, w, _ = image.shape
+    pts = [(int(landmarks[idx].x * w), int(landmarks[idx].y * h)) for idx in FEATURE_INDICES[feature_name]]
+    return np.array(pts, dtype=np.int32)
+
+def blend_feature(canvas_img, src_img, feature_name):
+    dst_pts = get_landmarks(canvas_img, feature_name)
+    src_pts = get_landmarks(src_img, feature_name)
     
-    x_coords = [int(landmarks[idx].x * w) for idx in FEATURE_INDICES[feature_name]]
-    y_coords = [int(landmarks[idx].y * h) for idx in FEATURE_INDICES[feature_name]]
-
-    x_min, x_max = max(0, min(x_coords) - padding), min(w, max(x_coords) + padding)
-    y_min, y_max = max(0, min(y_coords) - padding), min(h, max(y_coords) + padding)
-
-    return image[y_min:y_max, x_min:x_max]
-
-def build_v2_splicer(photo_a_path, photo_b_path, photo_c_path):
-    img_a = cv2.imread(photo_a_path)
-    img_b = cv2.imread(photo_b_path)
-    img_c = cv2.imread(photo_c_path)
-
-    if img_a is None or img_b is None or img_c is None:
-        return
-
-    eyes_crop = get_auto_crop(img_a, "eyes")
-    nose_crop = get_auto_crop(img_b, "nose")
-    mouth_crop = get_auto_crop(img_c, "mouth")
-
-    if eyes_crop is None or nose_crop is None or mouth_crop is None:
-        return
-
-    target_width = eyes_crop.shape[1]
-
-    def resize_to_width(img, t_width):
-        aspect_ratio = img.shape[0] / img.shape[1]
-        target_height = int(t_width * aspect_ratio)
-        return cv2.resize(img, (t_width, target_height))
-
-    nose_aligned = resize_to_width(nose_crop, target_width)
-    mouth_aligned = resize_to_width(mouth_crop, target_width)
-
-    final_portrait = np.vstack((eyes_crop, nose_aligned, mouth_aligned))
-
-    cv2.imshow("V2 Auto-Spliced Portrait", final_portrait)
-    cv2.imwrite("v2_spliced_output.jpg", final_portrait)
+    matrix, _ = cv2.estimateAffinePartial2D(src_pts, dst_pts)
+    if matrix is None:
+        raise ValueError(f"Could not calculate transformation matrix for {feature_name}.")
+        
+    transformed_pts = cv2.transform(np.array([src_pts], dtype=np.float32), matrix)[0]
+    error = np.mean(np.linalg.norm(transformed_pts - dst_pts, axis=1))
+    print(f"{feature_name.capitalize()} alignment error: {error:.1f} px")
+        
+    warped_src = cv2.warpAffine(src_img, matrix, (canvas_img.shape[1], canvas_img.shape[0]))
     
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    mask = np.zeros(canvas_img.shape[:2], dtype=np.uint8)
+    hull = cv2.convexHull(dst_pts)
+    cv2.fillConvexPoly(mask, hull, 255)
+    
+    kernel = np.ones((5,5), np.uint8)
+    mask = cv2.dilate(mask, kernel, iterations=2)
+    mask = cv2.GaussianBlur(mask, (21, 21), 0)
+    
+    x, y, w, h = cv2.boundingRect(hull)
+    center = (x + w // 2, y + h // 2)
+    
+    return cv2.seamlessClone(warped_src, canvas_img, mask, center, cv2.NORMAL_CLONE)
 
-if __name__ =="__main__":
+def build_v3_splicer(photo_a_path, photo_b_path, photo_c_path):
+    try:
+        img_a = cv2.imread(photo_a_path)
+        img_b = cv2.imread(photo_b_path)
+        img_c = cv2.imread(photo_c_path)
+
+        if any(img is None for img in [img_a, img_b, img_c]):
+            raise FileNotFoundError("One or more images could not be loaded. Check paths.")
+
+        canvas = img_a.copy()
+        
+        canvas = blend_feature(canvas, img_b, "nose")
+        canvas = blend_feature(canvas, img_c, "mouth")
+
+        cv2.imshow("V3 Enhanced Portrait", canvas)
+        cv2.imwrite("v3_enhanced_output.jpg", canvas)
+        
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        
+    except Exception as e:
+        print(f"Process failed: {str(e)}")
+
+if __name__ == "__main__":
     pass
