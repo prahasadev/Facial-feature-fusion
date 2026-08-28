@@ -7,8 +7,7 @@ face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1)
 
 FEATURE_INDICES = {
     "nose": [168, 275, 330, 327, 326, 2, 97, 98, 101, 45],
-    "mouth": [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78]
-}
+    "mouth": [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78]}
 
 def get_landmarks(image, feature_name):
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
