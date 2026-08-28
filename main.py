@@ -7,7 +7,8 @@ face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1)
 
 FEATURE_INDICES = {
     "nose": [168, 275, 330, 327, 326, 2, 97, 98, 101, 45],
-    "mouth": [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78]}
+    "mouth": [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78]
+}
 
 def get_landmarks(image, feature_name):
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -62,11 +63,7 @@ def build_v3_splicer(photo_a_path, photo_b_path, photo_c_path):
         canvas = blend_feature(canvas, img_b, "nose")
         canvas = blend_feature(canvas, img_c, "mouth")
 
-        cv2.imshow("V3 Enhanced Portrait", canvas)
         cv2.imwrite("v3_enhanced_output.jpg", canvas)
-        
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
         
     except Exception as e:
         print(f"Process failed: {str(e)}")
