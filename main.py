@@ -1,16 +1,13 @@
-
 import cv2
 import numpy as np
 import mediapipe as mp
-
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True)
 
 FEATURE_INDICES = {
     "eyes": [33, 133, 362, 263, 107, 336],
     "nose": [168, 19, 1, 4, 98, 327],
-    "mouth": [61, 291, 0, 17]
-}
+    "mouth": [61, 291, 0, 17]}
 
 def get_auto_crop(image, feature_name, padding=20):
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
