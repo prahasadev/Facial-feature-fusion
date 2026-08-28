@@ -72,4 +72,7 @@ def build_v3_splicer(photo_a_path, photo_b_path, photo_c_path):
         print(f"Process failed: {str(e)}")
 
 if __name__ == "__main__":
-    pass
+  build_v3_splicer(
+    "Photo_a.jpeg",
+    "Photo_b.jpeg",
+    "Photo_c.png")
