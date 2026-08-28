@@ -1,19 +1,36 @@
+
 import cv2
 import numpy as np
-import sys
+import mediapipe as mp
 
-def get_manual_crop(image, window_name):
-    roi = cv2.selectROI(f"Select {window_name}", image, fromCenter=False, showCrosshair=True)
-    cv2.destroyWindow(f"Select {window_name}")
-    
-    x, y, w, h = roi
-    
-    if w == 0 or h == 0:
-        sys.exit()
-        
-    return image[int(y):int(y+h), int(x):int(x+w)]
+mp_face_mesh = mp.solutions.face_mesh
+face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True)
 
-def build_v1_splicer(photo_a_path, photo_b_path, photo_c_path):
+FEATURE_INDICES = {
+    "eyes": [33, 133, 362, 263, 107, 336],
+    "nose": [168, 19, 1, 4, 98, 327],
+    "mouth": [61, 291, 0, 17]
+}
+
+def get_auto_crop(image, feature_name, padding=20):
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = face_mesh.process(rgb_image)
+
+    if not results.multi_face_landmarks:
+        return None
+
+    landmarks = results.multi_face_landmarks[0].landmark
+    h, w, _ = image.shape
+    
+    x_coords = [int(landmarks[idx].x * w) for idx in FEATURE_INDICES[feature_name]]
+    y_coords = [int(landmarks[idx].y * h) for idx in FEATURE_INDICES[feature_name]]
+
+    x_min, x_max = max(0, min(x_coords) - padding), min(w, max(x_coords) + padding)
+    y_min, y_max = max(0, min(y_coords) - padding), min(h, max(y_coords) + padding)
+
+    return image[y_min:y_max, x_min:x_max]
+
+def build_v2_splicer(photo_a_path, photo_b_path, photo_c_path):
     img_a = cv2.imread(photo_a_path)
     img_b = cv2.imread(photo_b_path)
     img_c = cv2.imread(photo_c_path)
@@ -21,9 +38,12 @@ def build_v1_splicer(photo_a_path, photo_b_path, photo_c_path):
     if img_a is None or img_b is None or img_c is None:
         return
 
-    eyes_crop = get_manual_crop(img_a, "Eyes")
-    nose_crop = get_manual_crop(img_b, "Nose")
-    mouth_crop = get_manual_crop(img_c, "Mouth")
+    eyes_crop = get_auto_crop(img_a, "eyes")
+    nose_crop = get_auto_crop(img_b, "nose")
+    mouth_crop = get_auto_crop(img_c, "mouth")
+
+    if eyes_crop is None or nose_crop is None or mouth_crop is None:
+        return
 
     target_width = eyes_crop.shape[1]
 
@@ -37,11 +57,11 @@ def build_v1_splicer(photo_a_path, photo_b_path, photo_c_path):
 
     final_portrait = np.vstack((eyes_crop, nose_aligned, mouth_aligned))
 
-    cv2.imshow("V1 Spliced Portrait", final_portrait)
-    cv2.imwrite("v1_spliced_output.jpg", final_portrait)
+    cv2.imshow("V2 Auto-Spliced Portrait", final_portrait)
+    cv2.imwrite("v2_spliced_output.jpg", final_portrait)
     
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-if __name__ == "__main__":
+if __name__ =="__main__":
     pass
