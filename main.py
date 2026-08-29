@@ -77,22 +77,13 @@ def blend_feature(canvas_img, src_img, feature_name):
     result[dy1:dy2, dx1:dx2] = clone
     return result
 
-def build_v8_splicer(photo_a_path, photo_b_path, photo_c_path):
-    try:
-        img_a = cv2.imread(photo_a_path)
-        img_b = cv2.imread(photo_b_path)
-        img_c = cv2.imread(photo_c_path)
-        if any(img is None for img in [img_a, img_b, img_c]):
-            raise FileNotFoundError("One or more images could not be loaded. Check paths.")
-        canvas = img_a.copy()
-        print("--- Blending Nose ---")
-        canvas = blend_feature(canvas, img_b, "nose")
-        print("\n--- Blending Mouth ---")
-        canvas = blend_feature(canvas, img_c, "mouth")
-        cv2.imwrite("v8_final.jpg", canvas)
-        print("\nSplicing complete! Saved as v8_final.jpg")
-    except Exception as e:
-        print(f"Process failed: {str(e)}")
-
-if __name__ == "__main__":
-    build_v8_splicer("Photo_a.jpg", "Photo_b.jpg", "Photo_c.jpg")
+def build_v8_splicer(photo_a_path, photo_b_path, photo_c_path, output_path):
+    img_a = cv2.imread(photo_a_path)
+    img_b = cv2.imread(photo_b_path)
+    img_c = cv2.imread(photo_c_path)
+    if any(img is None for img in [img_a, img_b, img_c]):
+        raise FileNotFoundError("One or more images could not be loaded. Check paths.")
+    canvas = img_a.copy()
+    canvas = blend_feature(canvas, img_b, "nose")
+    canvas = blend_feature(canvas, img_c, "mouth")
+    cv2.imwrite(output_path, canvas)
