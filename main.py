@@ -34,7 +34,7 @@ def blend_feature(canvas_img, src_img, feature_name):
     print(f"{feature_name.capitalize()} alignment error: {error:.1f} px")
         
     h, w = canvas_img.shape[:2]
-warped_src = cv2.warpAffine(src_img, matrix, (w, h))
+    warped_src = cv2.warpAffine(src_img, matrix, (w, h))
     
     mask = np.zeros(canvas_img.shape[:2], dtype=np.uint8)
     hull = cv2.convexHull(dst_pts)
@@ -47,7 +47,7 @@ warped_src = cv2.warpAffine(src_img, matrix, (w, h))
     x, y, w, h = cv2.boundingRect(hull)
     center = (x + w // 2, y + h // 2)
     
-    return warped_src
+    return cv2.seamlessClone(warped_src, canvas_img, mask, center, cv2.NORMAL_CLONE)
 
 def build_v4_splicer(photo_a_path, photo_b_path, photo_c_path):
     try:
@@ -72,4 +72,4 @@ if __name__ == "__main__":
     build_v4_splicer(
         "Photo_a.jpg",
         "Photo_b.jpg",
-        "Photo_c.jpg" )
+        "Photo_c.jpg")
