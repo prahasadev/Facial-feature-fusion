@@ -33,7 +33,7 @@ def blend_feature(canvas_img, src_img, feature_name):
     dst_pts = get_landmarks(canvas_img, feature_name)
     src_pts = get_landmarks(src_img, feature_name)
     dx, dy, dw, dh = cv2.boundingRect(dst_pts)
-    dst_pad = 30
+    dst_pad = 40 if feature_name == "mouth" else 30
     h_dst, w_dst = canvas_img.shape[:2]
     dx1, dy1 = max(0, dx - dst_pad), max(0, dy - dst_pad)
     dx2, dy2 = min(w_dst, dx + dw + dst_pad), min(h_dst, dy + dh + dst_pad)
@@ -54,25 +54,25 @@ def blend_feature(canvas_img, src_img, feature_name):
     print(f"{feature_name.capitalize()} local alignment error: {error:.1f} px")
     cw, ch = (dx2 - dx1), (dy2 - dy1)
     warped_src_crop = cv2.warpAffine(src_crop, matrix, (cw, ch))
-    cv2.imwrite(f"v6_{feature_name}_aligned.jpg", warped_src_crop)
+    cv2.imwrite(f"v7_{feature_name}_aligned.jpg", warped_src_crop)
     mask_crop = np.zeros((ch, cw), dtype=np.uint8)
     hull = cv2.convexHull(local_dst_pts)
     cv2.fillConvexPoly(mask_crop, hull, 255)
     if feature_name == "mouth":
-        mask_crop = cv2.dilate(mask_crop, np.ones((9, 9), np.uint8), iterations=1)
-        mask_crop = cv2.GaussianBlur(mask_crop, (15, 15), 0)
+        mask_crop = cv2.dilate(mask_crop, np.ones((13, 13), np.uint8), iterations=1)
+        mask_crop = cv2.GaussianBlur(mask_crop, (21, 21), 0)
     else:
-        mask_crop = cv2.GaussianBlur(mask_crop, (11, 11), 0)
+        mask_crop = cv2.GaussianBlur(mask_crop, (15, 15), 0)
     matched_src_crop = lab_color_transfer(warped_src_crop, dst_crop)
-    cv2.imwrite(f"v6_{feature_name}_color_matched.jpg", matched_src_crop)
+    cv2.imwrite(f"v7_{feature_name}_color_matched.jpg", matched_src_crop)
     mx, my, mw, mh = cv2.boundingRect(hull)
     center = (mx + mw // 2, my + mh // 2)
-    clone = cv2.seamlessClone(matched_src_crop, dst_crop, mask_crop, center, cv2.NORMAL_CLONE)
+    clone = cv2.seamlessClone(matched_src_crop, dst_crop, mask_crop, center, cv2.MIXED_CLONE)
     result = canvas_img.copy()
     result[dy1:dy2, dx1:dx2] = clone
     return result
 
-def build_v6_splicer(photo_a_path, photo_b_path, photo_c_path):
+def build_v7_splicer(photo_a_path, photo_b_path, photo_c_path):
     try:
         img_a = cv2.imread(photo_a_path)
         img_b = cv2.imread(photo_b_path)
@@ -84,10 +84,10 @@ def build_v6_splicer(photo_a_path, photo_b_path, photo_c_path):
         canvas = blend_feature(canvas, img_b, "nose")
         print("\n--- Blending Mouth ---")
         canvas = blend_feature(canvas, img_c, "mouth")
-        cv2.imwrite("v6_final.jpg", canvas)
-        print("\nSplicing complete! Check v6_final.jpg and debug files.")
+        cv2.imwrite("v7_final.jpg", canvas)
+        print("\nSplicing complete! Saved as v7_final.jpg")
     except Exception as e:
         print(f"Process failed: {str(e)}")
 
 if __name__ == "__main__":
-    build_v6_splicer("Photo_a.jpg", "Photo_b.jpg", "Photo_c.jpg")
+    build_v7_splicer("Photo_a.jpg", "Photo_b.jpg", "Photo_c.jpg")
