@@ -29,7 +29,7 @@ def blend_feature(canvas_img, src_img, feature_name):
     dst_x, dst_y, dst_w, dst_h = cv2.boundingRect(dst_pts)
     print(
         f"{feature_name.capitalize()} size: "
-        f"source={src_w}x{src_h}, target={dst_w}x{dst_h}")
+        f"source={src_w}x{src_h}, target={dst_w}x{dst_h})
     
     matrix, _ = cv2.estimateAffinePartial2D(src_pts, dst_pts)
     if matrix is None:
@@ -46,9 +46,18 @@ def blend_feature(canvas_img, src_img, feature_name):
     hull = cv2.convexHull(dst_pts)
     cv2.fillConvexPoly(mask, hull, 255)
     
-    kernel = np.ones((5,5), np.uint8)
-    mask = cv2.dilate(mask, kernel, iterations=2)
-    mask = cv2.GaussianBlur(mask, (21, 21), 0)
+    # Step 2: Dynamic mask scaling based on feature size
+    feature_size = max(dst_w, dst_h)
+    
+    dilate_size = max(3, int(feature_size * 0.05))
+    kernel = np.ones((dilate_size, dilate_size), np.uint8)
+    mask = cv2.dilate(mask, kernel, iterations=1)
+    
+    blur_size = max(3, int(feature_size * 0.15))
+    if blur_size % 2 == 0:
+        blur_size += 1
+        
+    mask = cv2.GaussianBlur(mask, (blur_size, blur_size), 0)
     
     x, y, w_box, h_box = cv2.boundingRect(mask)
     
@@ -61,8 +70,7 @@ def blend_feature(canvas_img, src_img, feature_name):
         dst_crop,
         mask_crop,
         (w_box // 2, h_box // 2),
-        cv2.NORMAL_CLONE
-    )
+        cv2.NORMAL_CLONE)
     
     result = canvas_img.copy()
     result[y:y+h_box, x:x+w_box] = clone
@@ -93,4 +101,4 @@ if __name__ == "__main__":
     build_v4_splicer(
         "Photo_a.jpg",
         "Photo_b.jpg",
-        "Photo_c.jpg" )
+        "Photo_c.jpg")
