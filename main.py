@@ -33,7 +33,8 @@ def blend_feature(canvas_img, src_img, feature_name):
     error = np.mean(np.linalg.norm(transformed_pts - dst_pts, axis=1))
     print(f"{feature_name.capitalize()} alignment error: {error:.1f} px")
         
-    warped_src = cv2.warpAffine(src_img, matrix, (canvas_img.shape[1], canvas_img.shape[0]))
+    h, w = canvas_img.shape[:2]
+warped_src = cv2.warpAffine(src_img, matrix, (w, h))
     
     mask = np.zeros(canvas_img.shape[:2], dtype=np.uint8)
     hull = cv2.convexHull(dst_pts)
