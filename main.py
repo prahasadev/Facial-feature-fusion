@@ -44,10 +44,23 @@ def blend_feature(canvas_img, src_img, feature_name):
     mask = cv2.dilate(mask, kernel, iterations=2)
     mask = cv2.GaussianBlur(mask, (21, 21), 0)
     
-    x, y, w, h = cv2.boundingRect(hull)
-    center = (x + w // 2, y + h // 2)
+    x, y, w_box, h_box = cv2.boundingRect(mask)
     
-    return cv2.seamlessClone(warped_src, canvas_img, mask, center, cv2.NORMAL_CLONE)
+    src_crop = warped_src[y:y+h_box, x:x+w_box]
+    dst_crop = canvas_img[y:y+h_box, x:x+w_box]
+    mask_crop = mask[y:y+h_box, x:x+w_box]
+    
+    clone = cv2.seamlessClone(
+        src_crop,
+        dst_crop,
+        mask_crop,
+        (w_box // 2, h_box // 2),
+        cv2.NORMAL_CLONE)
+    
+    result = canvas_img.copy()
+    result[y:y+h_box, x:x+w_box] = clone
+    
+    return result
 
 def build_v4_splicer(photo_a_path, photo_b_path, photo_c_path):
     try:
