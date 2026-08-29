@@ -190,7 +190,7 @@ document.getElementById("generateButton").addEventListener("click", async () => 
     status.textContent = "Processing...";
 
     try {
-        const response = await fetch("http://127.0.0.1:8000/api/generate-composite", {
+        const response = await fetch("/api/generate-composite", {
             method: "POST",
             body: formData});
 
