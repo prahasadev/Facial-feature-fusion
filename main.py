@@ -25,7 +25,7 @@ def blend_feature(canvas_img, src_img, feature_name):
     dst_pts = get_landmarks(canvas_img, feature_name)
     src_pts = get_landmarks(src_img, feature_name)
     
-    matrix, _ = cv2.estimateAffinePartial2D(src_pts, dst_pts)
+    matrix, _ = cv2.estimateAffine2D(src_pts, dst_pts)
     if matrix is None:
         raise ValueError(f"Could not calculate transformation matrix for {feature_name}.")
         
@@ -48,7 +48,7 @@ def blend_feature(canvas_img, src_img, feature_name):
     
     return cv2.seamlessClone(warped_src, canvas_img, mask, center, cv2.NORMAL_CLONE)
 
-def build_v3_splicer(photo_a_path, photo_b_path, photo_c_path):
+def build_v4_splicer(photo_a_path, photo_b_path, photo_c_path):
     try:
         img_a = cv2.imread(photo_a_path)
         img_b = cv2.imread(photo_b_path)
@@ -62,13 +62,13 @@ def build_v3_splicer(photo_a_path, photo_b_path, photo_c_path):
         canvas = blend_feature(canvas, img_b, "nose")
         canvas = blend_feature(canvas, img_c, "mouth")
 
-        cv2.imwrite("v3_enhanced_output.jpg", canvas)
+        cv2.imwrite("v4_enhanced_output.jpg", canvas)
         
     except Exception as e:
         print(f"Process failed: {str(e)}")
 
 if __name__ == "__main__":
-  build_v3_splicer(
-    "Photo_a.jpg",
-    "Photo_b.jpg",
-    "Photo_c.jpg")
+    build_v4_splicer(
+        "Photo_a.jpg",
+        "Photo_b.jpg",
+        "Photo_c.jpg" )
