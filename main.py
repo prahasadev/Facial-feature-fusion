@@ -69,6 +69,6 @@ def build_v3_splicer(photo_a_path, photo_b_path, photo_c_path):
 
 if __name__ == "__main__":
   build_v3_splicer(
-    "Photo_a.jpeg",
-    "Photo_b.jpeg",
-    "Photo_c.png")
+    "Photo_a.jpg",
+    "Photo_b.jpg",
+    "Photo_c.jpg")
