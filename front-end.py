@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import tempfile
 import shutil
 from pathlib import Path
-from v8_splicer import build_v8_splicer
+from main import build_v8_splicer
 
 app = FastAPI()
 
