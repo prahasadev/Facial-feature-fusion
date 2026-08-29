@@ -47,7 +47,7 @@ warped_src = cv2.warpAffine(src_img, matrix, (w, h))
     x, y, w, h = cv2.boundingRect(hull)
     center = (x + w // 2, y + h // 2)
     
-    return cv2.seamlessClone(warped_src, canvas_img, mask, center, cv2.NORMAL_CLONE)
+    return warped_src
 
 def build_v4_splicer(photo_a_path, photo_b_path, photo_c_path):
     try:
