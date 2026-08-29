@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facial Feature Fusion</title>
+
+    <style>
+        * {
+            box-sizing: border-box;}
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #222;}
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 40px 20px;}
+
+        h1 {
+            text-align: center;
+            margin-bottom: 8px;}
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 35px;}
+
+        .uploads {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;}
+
+        .upload-box {
+            background: white;
+            border: 2px dashed #bbb;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;}
+
+        .upload-box h3 {
+            margin-top: 0;}
+
+        input[type="file"] {
+            width: 100%;
+            margin-top: 15px;}
+
+        .preview {
+            width: 100%;
+            height: 180px;
+            object-fit: contain;
+            margin-top: 15px;
+            display: none;
+            border-radius: 8px;}
+
+        button {
+            display: block;
+            margin: 30px auto;
+            padding: 14px 35px;
+            border: none;
+            border-radius: 8px;
+            background: #222;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;}
+
+        button:hover {
+            opacity: 0.85;}
+
+        #status {
+            text-align: center;
+            margin: 20px;
+            font-weight: bold;}
+
+        .result {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;}
+
+        .result img {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 10px;}
+
+        .pipeline {
+            text-align: center;
+            color: #666;
+            margin: 20px 0;}
+
+        @media (max-width: 700px) {
+            .uploads {
+                grid-template-columns: 1fr;}}
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Facial Feature Fusion</h1>
+
+    <p class="subtitle">
+        Computer vision for localized facial feature alignment and blending
+    </p>
+
+    <div class="uploads">
+
+        <div class="upload-box">
+            <h3>Base Image</h3>
+            <p>Photo A</p>
+            <input type="file" id="baseImage" accept="image/*">
+            <img id="basePreview" class="preview">
+        </div>
+
+        <div class="upload-box">
+            <h3>Nose Source</h3>
+            <p>Photo B</p>
+            <input type="file" id="noseSource" accept="image/*">
+            <img id="nosePreview" class="preview">
+        </div>
+
+        <div class="upload-box">
+            <h3>Mouth Source</h3>
+            <p>Photo C</p>
+            <input type="file" id="mouthSource" accept="image/*">
+            <img id="mouthPreview" class="preview">
+        </div>
+
+    </div>
+
+    <button id="generateButton">
+        Generate Composite
+    </button>
+
+    <div id="status"></div>
+
+    <div class="pipeline">
+        Landmark Detection → Alignment → Color Matching → Masking → Seamless Blending
+    </div>
+
+    <div class="result" id="result">
+        <h2>Final Composite</h2>
+        <img id="resultImage">
+    </div>
+
+</div>
+
+<script>
+const baseInput = document.getElementById("baseImage");
+const noseInput = document.getElementById("noseSource");
+const mouthInput = document.getElementById("mouthSource");
+
+function previewImage(input, previewId) {
+    const file = input.files[0];
+    if (!file) return;
+    const preview = document.getElementById(previewId);
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";}
+
+baseInput.addEventListener("change", () => {
+    previewImage(baseInput, "basePreview");});
+
+noseInput.addEventListener("change", () => {
+    previewImage(noseInput, "nosePreview");});
+
+mouthInput.addEventListener("change", () => {
+    previewImage(mouthInput, "mouthPreview");});
+
+document.getElementById("generateButton").addEventListener("click", async () => {
+    const baseFile = baseInput.files[0];
+    const noseFile = noseInput.files[0];
+    const mouthFile = mouthInput.files[0];
+
+    if (!baseFile || !noseFile || !mouthFile) {
+        document.getElementById("status").textContent = "Please upload all three images.";
+        return;}
+
+    const formData = new FormData();
+    formData.append("base_image", baseFile);
+    formData.append("nose_source", noseFile);
+    formData.append("mouth_source", mouthFile);
+
+    const status = document.getElementById("status");
+    status.textContent = "Processing...";
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/generate-composite", {
+            method: "POST",
+            body: formData});
+
+        if (!response.ok) {
+            throw new Error("Server error");}
+
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+
+        document.getElementById("resultImage").src = imageUrl;
+        document.getElementById("result").style.display = "block";
+        status.textContent = "Composite generated successfully.";}
+    catch (error) {
+        console.error(error);
+        status.textContent = "Something went wrong. Make sure the FastAPI server is running.";}});
+</script>
+
+</body>
+</html>
