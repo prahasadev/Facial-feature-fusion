@@ -58,7 +58,12 @@ def blend_feature(canvas_img, src_img, feature_name):
     mask_crop = np.zeros((ch, cw), dtype=np.uint8)
     hull = cv2.convexHull(local_dst_pts)
     cv2.fillConvexPoly(mask_crop, hull, 255)
-    mask_crop = cv2.GaussianBlur(mask_crop, (11, 11), 0)
+    if feature_name == "mouth":
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 15))
+        mask_crop = cv2.dilate(mask_crop, kernel, iterations=1)
+        mask_crop = cv2.GaussianBlur(mask_crop, (21, 21), 0)
+    else:
+        mask_crop = cv2.GaussianBlur(mask_crop, (11, 11), 0)
     matched_src_crop = lab_color_transfer(warped_src_crop, dst_crop)
     cv2.imwrite(f"v8_{feature_name}_color_matched.jpg", matched_src_crop)
     mx, my, mw, mh = cv2.boundingRect(hull)
