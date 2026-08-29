@@ -8,6 +8,10 @@ from main import build_v8_splicer
 
 app = FastAPI()
 
+@app.get("/")
+async def home():
+    return FileResponse("index.html")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
