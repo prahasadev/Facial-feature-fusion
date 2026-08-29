@@ -67,7 +67,8 @@ def blend_feature(canvas_img, src_img, feature_name):
     cv2.imwrite(f"v7_{feature_name}_color_matched.jpg", matched_src_crop)
     mx, my, mw, mh = cv2.boundingRect(hull)
     center = (mx + mw // 2, my + mh // 2)
-    clone = cv2.seamlessClone(matched_src_crop, dst_crop, mask_crop, center, cv2.MIXED_CLONE)
+    clone_mode = cv2.NORMAL_CLONE if feature_name == "nose" else cv2.MIXED_CLONE
+    clone = cv2.seamlessClone(matched_src_crop, dst_crop, mask_crop, center, clone_mode)
     result = canvas_img.copy()
     result[dy1:dy2, dx1:dx2] = clone
     return result
