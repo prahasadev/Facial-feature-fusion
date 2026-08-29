@@ -25,6 +25,12 @@ def blend_feature(canvas_img, src_img, feature_name):
     dst_pts = get_landmarks(canvas_img, feature_name)
     src_pts = get_landmarks(src_img, feature_name)
     
+    src_x, src_y, src_w, src_h = cv2.boundingRect(src_pts)
+    dst_x, dst_y, dst_w, dst_h = cv2.boundingRect(dst_pts)
+    print(
+        f"{feature_name.capitalize()} size: "
+        f"source={src_w}x{src_h}, target={dst_w}x{dst_h}")
+    
     matrix, _ = cv2.estimateAffinePartial2D(src_pts, dst_pts)
     if matrix is None:
         raise ValueError(f"Could not calculate transformation matrix for {feature_name}.")
@@ -55,7 +61,8 @@ def blend_feature(canvas_img, src_img, feature_name):
         dst_crop,
         mask_crop,
         (w_box // 2, h_box // 2),
-        cv2.NORMAL_CLONE)
+        cv2.NORMAL_CLONE
+    )
     
     result = canvas_img.copy()
     result[y:y+h_box, x:x+w_box] = clone
@@ -86,4 +93,4 @@ if __name__ == "__main__":
     build_v4_splicer(
         "Photo_a.jpg",
         "Photo_b.jpg",
-        "Photo_c.jpg")
+        "Photo_c.jpg" )
