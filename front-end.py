@@ -1,6 +1,7 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.background import BackgroundTask
 import tempfile
 import shutil
 from pathlib import Path
@@ -8,16 +9,18 @@ from main import build_v8_splicer
 
 app = FastAPI()
 
-@app.get("/")
-async def home():
-    return FileResponse("index.html")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],)
+    allow_headers=["*"])
+
+
+@app.get("/")
+async def home():
+    return FileResponse("index.html")
+
 
 @app.post("/api/generate-composite")
 async def generate_composite(
@@ -46,16 +49,23 @@ async def generate_composite(
             str(base_path),
             str(nose_path),
             str(mouth_path),
-            str(output_path) )
+            str(output_path))
+
+        if not output_path.exists():
+            raise FileNotFoundError("V8 did not create the output image.")
 
         return FileResponse(
             str(output_path),
             media_type="image/jpeg",
-            filename="v8_final.jpg")
+            filename="v8_final.jpg",
+            background=BackgroundTask(
+                shutil.rmtree,
+                temp_dir,
+                ignore_errors=True))
 
-    except Exception as e:
+    except Exception:
         shutil.rmtree(temp_dir, ignore_errors=True)
-        raise e
+        raise
 
 
 if __name__ == "__main__":
