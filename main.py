@@ -25,16 +25,16 @@ def blend_feature(canvas_img, src_img, feature_name):
     dst_pts = get_landmarks(canvas_img, feature_name)
     src_pts = get_landmarks(src_img, feature_name)
     
-    matrix, _ = cv2.estimateAffine2D(src_pts, dst_pts)
+    matrix, mask_inliers = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
     if matrix is None:
-        raise ValueError(f"Could not calculate transformation matrix for {feature_name}.")
+        raise ValueError(f"Could not calculate perspective transformation matrix for {feature_name}.")
         
-    transformed_pts = cv2.transform(np.array([src_pts], dtype=np.float32), matrix)[0]
+    transformed_pts = cv2.perspectiveTransform(np.array([src_pts], dtype=np.float32), matrix)[0]
     error = np.mean(np.linalg.norm(transformed_pts - dst_pts, axis=1))
     print(f"{feature_name.capitalize()} alignment error: {error:.1f} px")
         
     h, w = canvas_img.shape[:2]
-    warped_src = cv2.warpAffine(src_img, matrix, (w, h))
+    warped_src = cv2.warpPerspective(src_img, matrix, (w, h))
     
     mask = np.zeros(canvas_img.shape[:2], dtype=np.uint8)
     hull = cv2.convexHull(dst_pts)
@@ -77,6 +77,7 @@ def build_v4_splicer(photo_a_path, photo_b_path, photo_c_path):
         canvas = blend_feature(canvas, img_c, "mouth")
 
         cv2.imwrite("v4_enhanced_output.jpg", canvas)
+        print("Splicing complete! Saved as v4_enhanced_output.jpg")
         
     except Exception as e:
         print(f"Process failed: {str(e)}")
