@@ -5,7 +5,7 @@ from starlette.background import BackgroundTask
 import tempfile
 import shutil
 from pathlib import Path
-from main import build_v8_splicer
+from main import build_v9_splicer
 
 app = FastAPI()
 
@@ -45,7 +45,7 @@ async def generate_composite(
         with open(mouth_path, "wb") as buffer:
             shutil.copyfileobj(mouth_source.file, buffer)
 
-        build_v8_splicer(
+        build_v9_splicer(
             str(base_path),
             str(nose_path),
             str(mouth_path),
